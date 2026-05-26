@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  # Contenedor 1: Backend
+  api:
+    build: ./app
+    container_name: cloudzy_api
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+    depends_on:
+      - db
+    networks:
+      - cloudzy_network
+
+  # Contenedor 2: Base de Datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: cloudzy_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    networks:
+      - cloudzy_network
+
+networks:
+  cloudzy_network:
+    driver: bridge
