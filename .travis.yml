@@ -1,0 +1,23 @@
+language: node_js
+node_js:
+  - "18"
+
+services:
+  - docker
+
+before_script:
+  - echo "Inicializando entorno multi-contenedor en la nube de Travis..."
+  # Creamos la red virtual para que los contenedores se comuniquen en su entorno virtual
+  - docker network create cloudzy_network || true
+
+script:
+  - echo "Levantando Base de Datos..."
+  - docker run -d --name cloudzy_db --network cloudzy_network -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=cloudzy_db -p 5432:5432 postgres:15-alpine
+  
+  - echo "Levantando API Backend..."
+  - docker build -t cloudzy-api ./app
+  - docker run -d --name cloudzy_api --network cloudzy_network -e DB_HOST=cloudzy_db -e DB_USER=postgres -e DB_PASSWORD=postgres -e DB_NAME=cloudzy_db -e DB_PORT=5432 -p 3000:3000 cloudzy-api
+  
+  - echo "Ejecutando Pruebas de Integración..."
+  - docker build -t cloudzy-api-test ./app
+  - docker run --name cloudzy_api_test --network cloudzy_network -e API_URL=http://cloudzy_api:3000 cloudzy-api-test npm test
